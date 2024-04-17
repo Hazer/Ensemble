@@ -10,6 +10,15 @@
       }
     },
     {
+      "identity" : "chronicle",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/saagarjha/Chronicle.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "69d2df6bbb789aef492ed1cad55e8780ce247740"
+      }
+    },
+    {
       "identity" : "cod",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/saagarjha/Cod.git",
