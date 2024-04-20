@@ -1,19 +1,19 @@
 //
-//  macOS.xcconfig
-//  Ensemble
+//  macOSClient.xcconfig
+//  macOS Client
 //
-//  Created by Saagar Jha on 10/8/23.
+//  Created by Vithorio Polten on 20/04/24.
 //
 
 ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
-CODE_SIGN_ENTITLEMENTS = macOS/Ensemble.entitlements
+CODE_SIGN_ENTITLEMENTS = macOS Client/Ensemble.entitlements
 CODE_SIGN_STYLE = Automatic
 COMBINE_HIDPI_IMAGES = YES
-DEVELOPMENT_ASSET_PATHS = "macOS/Preview Content"
+DEVELOPMENT_ASSET_PATHS = "macOS Client/Preview Content"
 ENABLE_HARDENED_RUNTIME = YES
 INFOPLIST_FILE = $(TARGET_NAME)/Info.plist
 INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.productivity
 LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks
-PRODUCT_BUNDLE_IDENTIFIER = com.saagarjha.MacCast
-PRODUCT_NAME = EnsembleServer
+PRODUCT_BUNDLE_IDENTIFIER = com.saagarjha.MacCastViewer
+PRODUCT_NAME = EnsembleViewer
 BONJOUR_SERVICE = ensemble

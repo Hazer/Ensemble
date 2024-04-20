@@ -9,7 +9,7 @@ import AppleConnect
 import Network
 import SwiftUI
 
-let service = "_\(Bundle.main.name.lowercased())._tcp"
+let service = "_ensemble._tcp"
 
 struct ConnectionView: View {
 	@Binding
@@ -22,7 +22,7 @@ struct ConnectionView: View {
 		NavigationSplitView(
 			sidebar: {
 				let icons = ["macbook", "macstudio", "macpro.gen3", "desktopcomputer"]
-				let gridSize = 9
+				let gridSize = 2
 
 				VStack(spacing: 20) {
 					ForEach(Array(1...gridSize), id: \.self) { row in
@@ -54,14 +54,16 @@ struct ConnectionView: View {
 												self.remote = remote
 											}
 										} catch {
+                                            print("failed conn \(error)")
 										}
 									}
 								}
 							default:
 								fatalError()
 						}
-					}
-					Text("To get started, open \(Bundle.main.name) on your Mac and select it from the list.")
+                    }
+                        
+                    Text("To get started, open \(Bundle.main.name) on your Mac and select it from the list.")
 						.padding()
 				}
 				.navigationTitle("Available Macs")

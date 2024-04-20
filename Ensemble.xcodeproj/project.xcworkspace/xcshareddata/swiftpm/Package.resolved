@@ -1,4 +1,5 @@
 {
+  "originHash" : "9a6b062daf9d746977bccca5328f74f60b0613b11c256a5ea4af868a627a422f",
   "pins" : [
     {
       "identity" : "appleconnect",
@@ -19,5 +20,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }

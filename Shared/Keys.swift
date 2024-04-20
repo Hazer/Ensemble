@@ -7,6 +7,7 @@
 
 #if os(macOS)
 	import Carbon
+    import AppKit
 #endif
 #if os(visionOS)
 	import UIKit
@@ -347,6 +348,32 @@ enum Key: Int, Codable {
 	#endif
 
 	#if os(macOS)
+    
+    init?(modifierFlags flags: NSEvent.ModifierFlags) {
+        switch flags {
+        case .shift:
+            self = Key.key_Shift
+        case .option:
+            self = Key.key_Option
+        case .control:
+            self = Key.key_Control
+        case .command:
+            self = Key.key_Command
+        case .capsLock:
+            self = Key.key_CapsLock
+        case .function:
+            self = Key.key_Function
+        case .help:
+            self = Key.key_Help
+        default:
+            return nil
+        }
+    }
+    
+        init?(macOSCode code: Int) {
+            self = macOsKeyMapping[code] ?? macOsKeyMapping[kVK_ANSI_0]!
+        }
+    
 		var macOSCode: Int {
 			switch self {
 				case .key_A:
@@ -579,3 +606,98 @@ enum Key: Int, Codable {
 		}
 	#endif
 }
+
+
+#if os(macOS)
+private let macOsKeyMapping: [Int: Key] = [
+    kVK_ANSI_A: .key_A,
+    kVK_ANSI_B: .key_B,
+    kVK_ANSI_C: .key_C,
+    kVK_ANSI_D: .key_D,
+    kVK_ANSI_E: .key_E,
+    kVK_ANSI_F: .key_F,
+    kVK_ANSI_G: .key_G,
+    kVK_ANSI_H: .key_H,
+    kVK_ANSI_I: .key_I,
+    kVK_ANSI_J: .key_J,
+    kVK_ANSI_K: .key_K,
+    kVK_ANSI_L: .key_L,
+    kVK_ANSI_M: .key_M,
+    kVK_ANSI_N: .key_N,
+    kVK_ANSI_O: .key_O,
+    kVK_ANSI_P: .key_P,
+    kVK_ANSI_Q: .key_Q,
+    kVK_ANSI_R: .key_R,
+    kVK_ANSI_S: .key_S,
+    kVK_ANSI_T: .key_T,
+    kVK_ANSI_U: .key_U,
+    kVK_ANSI_V: .key_V,
+    kVK_ANSI_W: .key_W,
+    kVK_ANSI_X: .key_X,
+    kVK_ANSI_Y: .key_Y,
+    kVK_ANSI_Z: .key_Z,
+    kVK_ANSI_1: .key_1,
+    kVK_ANSI_2: .key_2,
+    kVK_ANSI_3: .key_3,
+    kVK_ANSI_4: .key_4,
+    kVK_ANSI_5: .key_5,
+    kVK_ANSI_6: .key_6,
+    kVK_ANSI_7: .key_7,
+    kVK_ANSI_8: .key_8,
+    kVK_ANSI_9: .key_9,
+    kVK_ANSI_0: .key_0,
+    kVK_Return: .key_Return,
+    kVK_Tab: .key_Tab,
+    kVK_Space: .key_Space,
+    kVK_Delete: .key_Delete,
+    kVK_Escape: .key_Escape,
+    kVK_Command: .key_Command,
+    kVK_Shift: .key_Shift,
+    kVK_CapsLock: .key_CapsLock,
+    kVK_Option: .key_Option,
+    kVK_Control: .key_Control,
+    kVK_RightShift: .key_RightShift,
+    kVK_RightOption: .key_RightOption,
+    kVK_RightControl: .key_RightControl,
+    kVK_Function: .key_Function,
+    kVK_F17: .key_F17,
+    kVK_VolumeUp: .key_VolumeUp,
+    kVK_VolumeDown: .key_VolumeDown,
+    kVK_Mute: .key_Mute,
+    kVK_F18: .key_F18,
+    kVK_F19: .key_F19,
+    kVK_F20: .key_F20,
+    kVK_F5: .key_F5,
+    kVK_F6: .key_F6,
+    kVK_F7: .key_F7,
+    kVK_F3: .key_F3,
+    kVK_F8: .key_F8,
+    kVK_F9: .key_F9,
+    kVK_F11: .key_F11,
+    kVK_F13: .key_F13,
+    kVK_F16: .key_F16,
+    kVK_F14: .key_F14,
+    kVK_F10: .key_F10,
+    kVK_F12: .key_F12,
+    kVK_F15: .key_F15,
+    kVK_Help: .key_Help,
+    kVK_Home: .key_Home,
+    kVK_PageUp: .key_PageUp,
+    kVK_ForwardDelete: .key_ForwardDelete,
+    kVK_F4: .key_F4,
+    kVK_End: .key_End,
+    kVK_F2: .key_F2,
+    kVK_PageDown: .key_PageDown,
+    kVK_F1: .key_F1,
+    kVK_LeftArrow: .key_LeftArrow,
+    kVK_RightArrow: .key_RightArrow,
+    kVK_DownArrow: .key_DownArrow,
+    kVK_UpArrow: .key_UpArrow,
+    kVK_ANSI_Comma: .key_Comma,
+    kVK_ANSI_Period: .key_Period,
+    kVK_ANSI_Slash: .key_Slash,
+    kVK_ANSI_Backslash: .key_Backslash,
+    kVK_ANSI_Semicolon: .key_Semicolon,
+    kVK_ANSI_Quote: .key_Quote,
+]
+#endif

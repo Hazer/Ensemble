@@ -9,13 +9,17 @@ import Foundation
 
 enum Messages: UInt8, CaseIterable {
 	static let version = Bundle.main.version
-	case visionOSHandshake
-	case macOSHandshake
+	case viewerClientHandshake
+	case macOSHostHandshake
+    case shareables
+    case displays
 	case windows
-	case windowPreview
+    case windowPreview
+	case displayPreview
 	case startCasting
 	case stopCasting
-	case windowFrame
+    case windowFrame
+	case displayFrame
 	case windowMask
 	case startWatchingForChildWindows
 	case stopWatchingForChildWindows

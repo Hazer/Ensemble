@@ -8,7 +8,7 @@
 import AppleConnect
 import CoreMedia
 
-struct Remote: macOSInterface {
+struct Remote: macOSHostInterface {
 	let connection: Multiplexer
 	let local: Local
 	var name: String!
@@ -28,9 +28,37 @@ struct Remote: macOSInterface {
 		return true
 	}
 
-	func _handshake(parameters: M.VisionOSHandshake.Request) async throws -> M.VisionOSHandshake.Reply {
-		try await M.VisionOSHandshake.send(parameters, through: connection)
+	func _handshake(parameters: M.ViewerClientHandshake.Request) async throws -> M.ViewerClientHandshake.Reply {
+		try await M.ViewerClientHandshake.send(parameters, through: connection)
 	}
+    
+    var shareables: [Shareable] {
+        get async throws {
+            try await _shareables(parameters: .init()).shareables
+        }
+    }
+    
+    func _shareables(parameters: M.Shareables.Request) async throws -> M.Shareables.Reply {
+        try await M.Shareables.send(parameters, through: connection)
+    }
+    
+    var displays: [Display] {
+        get async throws {
+            try await _displays(parameters: .init()).displays
+        }
+    }
+    
+    func _displays(parameters: M.Displays.Request) async throws -> M.Displays.Reply {
+        try await M.Displays.send(parameters, through: connection)
+    }
+    
+    func displayPreview(for displayID: Display.ID) async throws -> Frame? {
+        try await _displayPreview(parameters: .init(displayID: displayID))
+    }
+    
+    func _displayPreview(parameters: M.DisplayPreview.Request) async throws -> M.DisplayPreview.Reply {
+        try await M.DisplayPreview.send(parameters, through: connection)
+    }
 
 	var windows: [Window] {
 		get async throws {
@@ -50,15 +78,15 @@ struct Remote: macOSInterface {
 		try await M.WindowPreview.send(parameters, through: connection)
 	}
 
-	func startCasting(for windowID: Window.ID) async throws -> AsyncStream<Frame> {
+	func startCasting(for target: StreamTarget) async throws -> AsyncStream<Frame> {
 		let (stream, continuation) = AsyncStream.makeStream(of: Frame.self, bufferingPolicy: .bufferingNewest(1))
-		local.streams[windowID] = continuation
+		local.streams[target] = continuation
 		continuation.onTermination = { _ in
 			Task {
-				try await _stopCasting(parameters: .init(windowID: windowID))
+				try await _stopCasting(parameters: .init(target: target))
 			}
 		}
-		_ = try await _startCasting(parameters: .init(windowID: windowID))
+		_ = try await _startCasting(parameters: .init(target: target))
 		return stream
 	}
 

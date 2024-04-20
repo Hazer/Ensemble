@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "49E09B522AD2EE5000B56CD3"
-               BuildableName = "Ensemble.app"
+               BuildableName = "EnsembleServer.app"
                BlueprintName = "macOS"
                ReferencedContainer = "container:Ensemble.xcodeproj">
             </BuildableReference>
@@ -44,7 +44,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "49E09B522AD2EE5000B56CD3"
-            BuildableName = "Ensemble.app"
+            BuildableName = "EnsembleServer.app"
             BlueprintName = "macOS"
             ReferencedContainer = "container:Ensemble.xcodeproj">
          </BuildableReference>
@@ -61,7 +61,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "49E09B522AD2EE5000B56CD3"
-            BuildableName = "Ensemble.app"
+            BuildableName = "EnsembleServer.app"
             BlueprintName = "macOS"
             ReferencedContainer = "container:Ensemble.xcodeproj">
          </BuildableReference>

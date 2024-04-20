@@ -9,7 +9,7 @@ import AppleConnect
 import CoreGraphics
 import CoreMedia
 
-struct Remote: visionOSInterface {
+struct Remote: ViewerClientInterface {
 	let connection: Multiplexer
 	var name: String!
 
@@ -28,9 +28,17 @@ struct Remote: visionOSInterface {
 		return true
 	}
 
-	func _handshake(parameters: M.MacOSHandshake.Request) async throws -> M.MacOSHandshake.Reply {
-		try await M.MacOSHandshake.send(parameters, through: connection)
+	func _handshake(parameters: M.MacOSHostHandshake.Request) async throws -> M.MacOSHostHandshake.Reply {
+		try await M.MacOSHostHandshake.send(parameters, through: connection)
 	}
+    
+    func displayFrame(forDisplayID displayID: CGDirectDisplayID, frame: Frame) async throws {
+        _ = try await _displayFrame(parameters: .init(displayID: displayID, frame: frame))
+    }
+
+    func _displayFrame(parameters: M.DisplayFrame.Request) async throws -> M.DisplayFrame.Reply {
+        try await M.DisplayFrame.send(parameters, through: connection)
+    }
 
 	func windowFrame(forWindowID windowID: CGWindowID, frame: Frame) async throws {
 		_ = try await _windowFrame(parameters: .init(windowID: windowID, frame: frame))

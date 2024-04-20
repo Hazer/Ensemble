@@ -117,6 +117,10 @@ actor WindowManager {
 		}
 		return NSRunningApplication(processIdentifier: pid)
 	}
+    
+    func lookupApplicationSimple(forWindowID id: CGWindowID) async -> Application? {
+        return try? await _lookupWindow(byID: id)?.application
+    }
 
 	var allWindows: [SCWindow] {
 		get async throws {
@@ -145,7 +149,7 @@ actor WindowManager {
 		return (window as! AXUIElement?)?.windowID
 	}
 
-	func activateWindow(identifiedBy windowID: CGWindowID) async {
+    func activateWindow(identifiedBy windowID: CGWindowID, force: Bool = false) async {
 		guard _AXUIElementGetWindow != nil else {
 			return
 		}
@@ -153,9 +157,18 @@ actor WindowManager {
 		guard activatedWindow() != windowID else {
 			return
 		}
-
-		let window = windows[windowID]!
-		let application = window.application!
+        
+        var application = windows[windowID]?.application
+        if application == nil {
+            if force {
+                _ = try? await allWindows
+            }
+            application = await lookupApplicationSimple(forWindowID: windowID)
+        }
+        
+        guard let application = application else {
+            return
+        }
 
 		var psn = ProcessSerialNumber()
 		_ = GetProcessForPID(application.application.processID, &psn)

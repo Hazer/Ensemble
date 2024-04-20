@@ -12,12 +12,13 @@ import CryptoKit
 import Foundation
 import SystemConfiguration
 
-class Local: LocalInterface, macOSInterface {
+class Local: LocalInterface, macOSHostInterface {
 	var remote: Remote!
 
 	let screenRecorder = ScreenRecorder()
 	let eventDispatcher = EventDispatcher()
 	let windowManager = WindowManager()
+    let displayManager = DisplayManager()
 
 	struct Mask {
 		let mask: vImage.PixelBuffer<vImage.Planar8>
@@ -26,10 +27,10 @@ class Local: LocalInterface, macOSInterface {
 	}
 
 	actor Masks {
-		var masks = [Window.ID: Mask]()
+		var masks = [StreamTarget: Mask]()
 
-		func unmask(_ frame: inout Frame, for windowID: Window.ID) {
-			switch masks[windowID] {
+		func unmask(_ frame: inout Frame, for target: StreamTarget) {
+			switch masks[target] {
 				case let .some(mask):
 					let same = mask.mask.withUnsafeBufferPointer { oldMask in
 						frame.mask.withUnsafeBufferPointer { newMask in
@@ -41,37 +42,43 @@ class Local: LocalInterface, macOSInterface {
 					}
 				case nil:
 					frame.mask.withUnsafeBufferPointer {
-						masks[windowID] = Mask(mask: frame.mask, hash: SHA256.hash(data: $0), acknowledged: false)
+						masks[target] = Mask(mask: frame.mask, hash: SHA256.hash(data: $0), acknowledged: false)
 					}
 			}
 
-			if let mask = masks[windowID], mask.acknowledged {
+			if let mask = masks[target], mask.acknowledged {
 				frame.skipMask = true
 			}
 		}
 
-		func remove(for windowID: Window.ID) {
-			masks.removeValue(forKey: windowID)
+		func remove(for target: StreamTarget) {
+			masks.removeValue(forKey: target)
 		}
 
-		func acknowledge(hash: Data, for windowID: Window.ID) {
-			var mask = masks[windowID]!
+		func acknowledge(hash: Data, for target: StreamTarget) {
+			var mask = masks[target]!
 			if Data(mask.hash) == hash {
 				mask.acknowledged = true
 			}
-			masks[windowID] = mask
+			masks[target] = mask
 		}
 	}
 	let masks = Masks()
 
 	func handle(message: Messages, data: Data) async throws -> Data? {
 		switch message {
-			case .visionOSHandshake:
+			case .viewerClientHandshake:
 				return try await _handshake(parameters: .decode(data)).encode()
+            case .shareables:
+                return try await _shareables(parameters: .decode(data)).encode()
+            case .displays:
+                return try await _displays(parameters: .decode(data)).encode()
 			case .windows:
 				return try await _windows(parameters: .decode(data)).encode()
 			case .windowPreview:
 				return try await _windowPreview(parameters: .decode(data)).encode()
+            case .displayPreview:
+                return try await _displayPreview(parameters: .decode(data)).encode()
 			case .startCasting:
 				return try await _startCasting(parameters: .decode(data)).encode()
 			case .stopCasting:
@@ -107,7 +114,7 @@ class Local: LocalInterface, macOSInterface {
 		}
 	}
 
-	func _handshake(parameters: M.VisionOSHandshake.Request) async throws -> M.VisionOSHandshake.Reply {
+	func _handshake(parameters: M.ViewerClientHandshake.Request) async throws -> M.ViewerClientHandshake.Reply {
 		return .init(version: Messages.version, name: SCDynamicStoreCopyComputerName(nil, nil)! as String)
 	}
 
@@ -122,6 +129,34 @@ class Local: LocalInterface, macOSInterface {
 				return Window(windowID: $0.windowID, title: $0.title, app: application, frame: $0.frame, windowLayer: $0.windowLayer)
 			})
 	}
+    
+    func _displays(parameters: M.Displays.Request) async throws -> M.Displays.Reply {
+        return try await .init(
+            displays: displayManager.allDisplays.compactMap {
+                return Display(displayID: $0.displayID, width: $0.width, height: $0.height, frame: $0.frame)
+            })
+    }
+    
+    func _shareables(parameters: M.Shareables.Request) async throws -> M.Shareables.Reply {
+        var shareables: [Shareable] = try await windowManager.allWindows.compactMap {
+            guard let application = $0.owningApplication?.applicationName,
+                $0.isOnScreen
+            else {
+                return nil
+            }
+            return Shareable.window(
+                value: Window(windowID: $0.windowID, title: $0.title, app: application, frame: $0.frame, windowLayer: $0.windowLayer)
+            )
+        }
+        
+        shareables += try await displayManager.allDisplays.compactMap {
+            return Shareable.display(
+                value: Display(displayID: $0.displayID, width: $0.width, height: $0.height, frame: $0.frame)
+            )
+        }
+        
+        return .init(shareables: shareables)
+    }
 
 	func _windowPreview(parameters: M.WindowPreview.Request) async throws -> M.WindowPreview.Reply {
 		guard let window = try await windowManager.lookupWindow(byID: parameters.windowID),
@@ -133,32 +168,60 @@ class Local: LocalInterface, macOSInterface {
 
 		return try await Frame(frame: screenshot)
 	}
+    
+    func _displayPreview(parameters: M.DisplayPreview.Request) async throws -> M.DisplayPreview.Reply {
+        guard let display = try await displayManager.lookupDisplay(byID: parameters.displayID),
+            let screenshot = try await screenRecorder.screenshot(display: display, size: M.DisplayPreview.previewSize)
+        else {
+            return nil
+        }
+
+        return try await Frame(frame: screenshot)
+    }
 
 	func _startCasting(parameters: M.StartCasting.Request) async throws -> M.StartCasting.Reply {
-		let window = try await windowManager.lookupWindow(byID: parameters.windowID)!
-		let stream = try await screenRecorder.stream(window: window)
-
-		Task {
-			for await frame in stream where frame.imageBuffer != nil {
-				Task {
-					var frame = try await Frame(frame: frame)
-					await masks.unmask(&frame, for: parameters.windowID)
-
-					try await remote.windowFrame(forWindowID: parameters.windowID, frame: frame)
-				}
-			}
-		}
+        switch parameters.target {
+        case .window(let windowID):
+            let window = try await windowManager.lookupWindow(byID: windowID)!
+            let stream = try await screenRecorder.stream(window: window)
+            
+            Task {
+                for await frame in stream where frame.imageBuffer != nil {
+                    Task {
+                        var frame = try await Frame(frame: frame)
+                        await masks.unmask(&frame, for: parameters.target)
+                        
+                        try await remote.windowFrame(forWindowID: windowID, frame: frame)
+                    }
+                }
+            }
+        case .display(let displayID):
+            let display = try await displayManager.lookupDisplay(byID: displayID)!
+            let stream = try await screenRecorder.stream(display: display)
+            
+            Task {
+                for await frame in stream where frame.imageBuffer != nil {
+                    Task {
+                        var frame = try await Frame(frame: frame)
+                        await masks.unmask(&frame, for: parameters.target)
+                        
+                        try await remote.displayFrame(forDisplayID: displayID, frame: frame)
+                    }
+                }
+            }
+        }
+		
 		return .init()
 	}
 
 	func _stopCasting(parameters: M.StopCasting.Request) async throws -> M.StopCasting.Reply {
-		await screenRecorder.stopStream(for: parameters.windowID)
-		await masks.remove(for: parameters.windowID)
+		await screenRecorder.stopStream(for: parameters.target)
+		await masks.remove(for: parameters.target)
 		return .init()
 	}
 
 	func _windowMask(parameters: M.WindowMask.Request) async throws -> M.WindowMask.Reply {
-		await masks.acknowledge(hash: parameters.hash, for: parameters.windowID)
+        await masks.acknowledge(hash: parameters.hash, for: StreamTarget.window(windowID: parameters.windowID))
 		return .init()
 	}
 
@@ -187,7 +250,7 @@ class Local: LocalInterface, macOSInterface {
 
 	func _clicked(parameters: M.Clicked.Request) async throws -> M.Clicked.Reply {
 		let window = try await windowManager.lookupWindow(byID: parameters.windowID)!
-		await windowManager.activateWindow(identifiedBy: parameters.windowID)
+		await windowManager.activateWindow(identifiedBy: parameters.windowID, force: true)
 		await eventDispatcher.injectClick(at: .init(x: window.frame.minX + window.frame.width * parameters.x, y: window.frame.minY + window.frame.height * parameters.y))
 		return .init()
 	}

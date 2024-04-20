@@ -16,7 +16,7 @@ struct WindowToolbarView: View {
 	var body: some View {
 		HStack {
 			if let icon {
-				Image(uiImage: UIImage(data: icon)!)
+                Image(nsImage: NSImage(data: icon)!)
 					.resizable()
 					.aspectRatio(contentMode: .fit)
 					.frame(maxHeight: 64)
@@ -44,13 +44,9 @@ struct WindowToolbarView: View {
 			.tint(.clear)
 			.padding()
 		}
-		.glassBackgroundEffect(in: .capsule)
 	}
 }
 
 #Preview {
-	Rectangle()
-		.ornament(attachmentAnchor: .scene(.bottom)) {
-			WindowToolbarView(title: "Window Title", icon: nil)
-		}
+    WindowToolbarView(title: "Title String", icon: nil)
 }

@@ -24,6 +24,6 @@ struct ContentViewAll: View {
             case nil:
                 TargetPickerView(remote: remote, selected: $selected)
             }
-        }
+        }.frame(minWidth: 400, minHeight: 400)
     }
 }

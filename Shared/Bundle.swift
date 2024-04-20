@@ -8,11 +8,15 @@
 import Foundation
 
 extension Bundle {
-	var name: String {
-		Bundle.main.infoDictionary![kCFBundleNameKey as String] as! String
+    var name: String {
+        Bundle.main.infoDictionary![kCFBundleNameKey as String] as! String
+    }
+
+	var bounjourServiceName: String {
+		(Bundle.main.infoDictionary!["BONJOUR_SERVICE"] as! String).lowercased()
 	}
 
 	var version: Int {
-		Int(Bundle.main.infoDictionary![kCFBundleVersionKey as String] as! String)!
+		13
 	}
 }

@@ -9,12 +9,15 @@ import CoreMedia
 import CryptoKit
 import Foundation
 
-protocol macOSInterface {
+protocol macOSHostInterface {
 	typealias M = macOSInterfaceMessages
 
-	func _handshake(parameters: M.VisionOSHandshake.Request) async throws -> M.VisionOSHandshake.Reply
+	func _handshake(parameters: M.ViewerClientHandshake.Request) async throws -> M.ViewerClientHandshake.Reply
+    func _shareables(parameters: M.Shareables.Request) async throws -> M.Shareables.Reply
+    func _displays(parameters: M.Displays.Request) async throws -> M.Displays.Reply
+    func _displayPreview(parameters: M.DisplayPreview.Request) async throws -> M.DisplayPreview.Reply
 	func _windows(parameters: M.Windows.Request) async throws -> M.Windows.Reply
-	func _windowPreview(parameters: M.WindowPreview.Request) async throws -> M.WindowPreview.Reply
+    func _windowPreview(parameters: M.WindowPreview.Request) async throws -> M.WindowPreview.Reply
 	func _startCasting(parameters: M.StartCasting.Request) async throws -> M.StartCasting.Reply
 	func _stopCasting(parameters: M.StopCasting.Request) async throws -> M.StopCasting.Reply
 	func _windowMask(parameters: M.WindowMask.Request) async throws -> M.WindowMask.Reply
@@ -32,6 +35,35 @@ protocol macOSInterface {
 	func _appIcon(parameters: M.AppIcon.Request) async throws -> M.AppIcon.Reply
 }
 
+enum Shareable: Codable, Identifiable {
+    var id: String {
+        switch self {
+        case .display(let value):
+            "d\(value)"
+        case .window(let value):
+            "w\(value)"
+        }
+    }
+    
+    case window(value: Window)
+    case display(value: Display)
+}
+
+struct Display: Codable, Identifiable {
+    let displayID: UInt32
+    let width: Int
+    let height: Int
+    let frame: CGRect
+
+    var id: UInt32 {
+        displayID
+    }
+    
+    var title: String {
+        "Display \(id)"
+    }
+}
+
 struct Window: Codable, Identifiable {
 	let windowID: UInt32
 	let title: String?
@@ -45,8 +77,8 @@ struct Window: Codable, Identifiable {
 }
 
 enum macOSInterfaceMessages {
-	struct VisionOSHandshake: Message {
-		static let id = Messages.visionOSHandshake
+	struct ViewerClientHandshake: Message {
+		static let id = Messages.viewerClientHandshake
 
 		struct Request: Serializable, Codable {
 			let version: Int
@@ -57,6 +89,16 @@ enum macOSInterfaceMessages {
 			let name: String
 		}
 	}
+    
+    struct Displays: Message {
+        static let id = Messages.displays
+
+        typealias Request = SerializableVoid
+
+        struct Reply: Serializable, Codable {
+            let displays: [Display]
+        }
+    }
 
 	struct Windows: Message {
 		static let id = Messages.windows
@@ -67,6 +109,16 @@ enum macOSInterfaceMessages {
 			let windows: [Window]
 		}
 	}
+    
+    struct Shareables: Message {
+        static let id = Messages.shareables
+
+        typealias Request = SerializableVoid
+
+        struct Reply: Serializable, Codable {
+            let shareables: [Shareable]
+        }
+    }
 
 	struct WindowPreview: Message {
 		static let id = Messages.windowPreview
@@ -78,12 +130,23 @@ enum macOSInterfaceMessages {
 
 		typealias Reply = Frame?
 	}
+    
+    struct DisplayPreview: Message {
+        static let id = Messages.displayPreview
+        static let previewSize = CGSize(width: 600, height: 400)
+
+        struct Request: Serializable, Codable {
+            let displayID: Display.ID
+        }
+
+        typealias Reply = Frame?
+    }
 
 	struct StartCasting: Message {
 		static let id = Messages.startCasting
 
 		struct Request: Serializable, Codable {
-			let windowID: Window.ID
+			let target: StreamTarget
 		}
 
 		typealias Reply = SerializableVoid
@@ -93,7 +156,7 @@ enum macOSInterfaceMessages {
 		static let id = Messages.stopCasting
 
 		struct Request: Serializable, Codable {
-			let windowID: Window.ID
+            let target: StreamTarget
 		}
 
 		typealias Reply = SerializableVoid
@@ -103,7 +166,7 @@ enum macOSInterfaceMessages {
 		static let id = Messages.windowMask
 
 		struct Request: Serializable, Codable {
-			let windowID: Window.ID
+            let windowID: Window.ID
 			let hash: Data
 		}
 

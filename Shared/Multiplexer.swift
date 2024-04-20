@@ -83,7 +83,7 @@ struct Multiplexer {
 	}
 
 	func send(message: Messages, data: Data, token: Int) async throws {
-		try! await connection.send(data: Data([message.rawValue]) + token.uleb128 + data)
+		try await connection.send(data: Data([message.rawValue]) + token.uleb128 + data)
 	}
 }
 

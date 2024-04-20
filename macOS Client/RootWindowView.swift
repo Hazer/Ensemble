@@ -28,19 +28,9 @@ struct RootWindowView: View {
 					let x = (child.frame.minX - window.frame.minX + child.frame.width / 2) / window.frame.width * geometry.size.width / geometry.size.width
 					let y = (child.frame.minY - window.frame.minY + child.frame.height / 2) / window.frame.height * geometry.size.height / geometry.size.height
 
-					Color.clear
-						.ornament(attachmentAnchor: .scene(.init(x: x, y: y))) {
-							WindowView(remote: remote, window: child)
-								.frame(width: width, height: height)
-						}
+                    WindowView(remote: remote, window: window)
 				}
 			}
-			.ornament(attachmentAnchor: .scene(.init(x: 0.5, y: 1 + 64 / geometry.size.height))) {
-				WindowToolbarView(title: window.title!, icon: appIcon)
-			}
-		}
-		.background {
-			AspectRatioConstrainingView(size: window.frame.size)
 		}
 		.task {
 			do {
@@ -61,26 +51,19 @@ struct RootWindowView: View {
 	}
 }
 
-struct AspectRatioConstrainingView: UIViewRepresentable {
-	let size: CGSize
 
-	class _View: UIView {
-		var _size = CGSize.zero {
-			didSet {
-				window?.windowScene?.requestGeometryUpdate(.Vision(size: _size, resizingRestrictions: .uniform))
-			}
-		}
+struct RootDisplayView: View {
+    let remote: Remote
+    let display: Display
 
-		override func didMoveToWindow() {
-			_size = { _size }()
-		}
-	}
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                DisplayView(remote: remote, display: display)
+            }
+        }
+        .task {
 
-	func makeUIView(context: Context) -> _View {
-		_View()
-	}
-
-	func updateUIView(_ uiView: UIViewType, context: Context) {
-		uiView._size = size
-	}
+        }
+    }
 }

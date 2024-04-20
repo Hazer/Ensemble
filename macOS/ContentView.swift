@@ -8,7 +8,7 @@
 import AppleConnect
 import SwiftUI
 
-let service = "_\(Bundle.main.name.lowercased())._tcp"
+let service = "_\(Bundle.main.bounjourServiceName)._tcp"
 
 struct ContentView: View {
 	@State
@@ -79,6 +79,7 @@ struct ContentView: View {
 						break
 					}
 				} catch {
+                    print("error: \(error)")
 				}
 			}
 		}
